@@ -1,0 +1,13 @@
+{
+  "note": "Fallback headlines, used when GDELT fails or returns nothing",
+  "monsoon": [
+    { "destination": "goa", "hoursAgo": 7, "source": "Times of India", "title": "IMD issues orange alert for Goa as heavy rain lashes coast" },
+    { "destination": "goa", "hoursAgo": 15, "source": "Herald Goa", "title": "Water sports suspended on North Goa beaches amid rough sea" },
+    { "destination": "goa", "hoursAgo": 22, "source": "NDTV", "title": "Waterlogging in Mapusa and Calangute disrupts tourist traffic" },
+    { "destination": "gokarna", "hoursAgo": 20, "source": "Deccan Herald", "title": "Gokarna sees steady tourist flow as coastal Karnataka stays mostly dry" }
+  ],
+  "normal": [
+    { "destination": "goa", "hoursAgo": 12, "source": "Times of India", "title": "Goa sees record tourist arrivals as season opens with clear skies" },
+    { "destination": "gokarna", "hoursAgo": 30, "source": "Deccan Herald", "title": "Gokarna beaches clean and calm ahead of winter season" }
+  ]
+}

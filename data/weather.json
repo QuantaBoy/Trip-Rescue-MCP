@@ -1,0 +1,17 @@
+{
+  "note": "Fallback forecast by trip day, used when Open-Meteo fails or the scenario forces rain",
+  "monsoon": [
+    { "day": 1, "summary": "Cloudy", "rainMm": 2, "tempC": 29 },
+    { "day": 2, "summary": "Light showers", "rainMm": 6, "tempC": 28 },
+    { "day": 3, "summary": "Cloudy", "rainMm": 3, "tempC": 29 },
+    { "day": 4, "summary": "Heavy rain", "rainMm": 48, "tempC": 26 },
+    { "day": 5, "summary": "Heavy rain", "rainMm": 35, "tempC": 26 }
+  ],
+  "normal": [
+    { "day": 1, "summary": "Sunny", "rainMm": 0, "tempC": 31 },
+    { "day": 2, "summary": "Sunny", "rainMm": 0, "tempC": 32 },
+    { "day": 3, "summary": "Partly cloudy", "rainMm": 0, "tempC": 31 },
+    { "day": 4, "summary": "Sunny", "rainMm": 0, "tempC": 31 },
+    { "day": 5, "summary": "Sunny", "rainMm": 1, "tempC": 30 }
+  ]
+}

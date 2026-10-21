@@ -1,0 +1,11 @@
+{
+  "name": "Traveler",
+  "home": "Bengaluru",
+  "budget": 60000,
+  "travelers": 2,
+  "likes": ["pool", "beach", "water sports", "food"],
+  "dislikes": ["museum", "crowds"],
+  "pastTrips": [
+    { "destination": "Pondicherry", "year": 2025, "liked": ["scuba", "cafes"], "disliked": ["traffic"] }
+  ]
+}

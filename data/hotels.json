@@ -1,0 +1,9 @@
+[
+  { "id": "goa-h1", "destination": "goa", "name": "Sea Breeze Resort", "area": "Candolim", "pricePerNight": 5200, "rating": 4.4, "features": ["pool", "beach", "breakfast"] },
+  { "id": "goa-h2", "destination": "goa", "name": "Palm Grove Inn", "area": "Panjim", "pricePerNight": 2600, "rating": 4.0, "features": ["quiet", "breakfast"] },
+  { "id": "goa-h3", "destination": "goa", "name": "Baga Party Hostel", "area": "Baga", "pricePerNight": 1500, "rating": 3.6, "features": ["nightlife", "crowds"] },
+  { "id": "goa-h4", "destination": "goa", "name": "Taj Fort Aguada", "area": "Sinquerim", "pricePerNight": 16000, "rating": 4.8, "features": ["pool", "beach", "spa", "luxury"] },
+  { "id": "gok-h1", "destination": "gokarna", "name": "Cliffside Cottages", "area": "Om Beach", "pricePerNight": 4300, "rating": 4.3, "features": ["pool", "beach", "quiet"] },
+  { "id": "gok-h2", "destination": "gokarna", "name": "Kudle Shacks", "area": "Kudle Beach", "pricePerNight": 1800, "rating": 3.9, "features": ["beach"] },
+  { "id": "gok-h3", "destination": "gokarna", "name": "SwaSwara", "area": "Om Beach", "pricePerNight": 14000, "rating": 4.7, "features": ["pool", "spa", "luxury", "quiet"] }
+]

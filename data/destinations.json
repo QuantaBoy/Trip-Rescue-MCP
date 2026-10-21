@@ -1,0 +1,4 @@
+[
+  { "id": "goa", "name": "Goa", "lat": 15.4909, "lon": 73.8278, "newsQuery": "Goa (flood OR rain OR closed OR beach OR tourists)", "about": "Beaches, water sports, seafood and nightlife." },
+  { "id": "gokarna", "name": "Gokarna", "lat": 14.5479, "lon": 74.3188, "newsQuery": "Gokarna (flood OR rain OR closed OR beach OR tourists)", "about": "Quieter beaches, cliff treks and water sports, 3 hours south of Goa." }
+]

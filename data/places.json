@@ -1,0 +1,20 @@
+[
+  { "id": "goa-p1", "destination": "goa", "name": "Scuba at Grande Island", "area": "Grande Island", "cost": 4500, "indoor": false, "hours": 5, "tags": ["water sports"] },
+  { "id": "goa-p2", "destination": "goa", "name": "Parasailing at Calangute", "area": "Calangute", "cost": 1500, "indoor": false, "hours": 2, "tags": ["water sports", "beach"] },
+  { "id": "goa-p3", "destination": "goa", "name": "Palolem beach day", "area": "Palolem", "cost": 800, "indoor": false, "hours": 5, "tags": ["beach"] },
+  { "id": "goa-p4", "destination": "goa", "name": "Baga beach shacks", "area": "Baga", "cost": 1200, "indoor": false, "hours": 3, "tags": ["beach", "food", "crowds"] },
+  { "id": "goa-p5", "destination": "goa", "name": "Dudhsagar jeep safari", "area": "Dudhsagar", "cost": 3000, "indoor": false, "hours": 6, "tags": ["nature"] },
+  { "id": "goa-p6", "destination": "goa", "name": "Fort Aguada sunset", "area": "Sinquerim", "cost": 300, "indoor": false, "hours": 2, "tags": ["history", "views"] },
+  { "id": "goa-p7", "destination": "goa", "name": "Spice plantation tour", "area": "Ponda", "cost": 1500, "indoor": false, "hours": 4, "tags": ["food", "nature"] },
+  { "id": "goa-p8", "destination": "goa", "name": "Goan cooking class", "area": "Panjim", "cost": 2500, "indoor": true, "hours": 3, "tags": ["food"] },
+  { "id": "goa-p9", "destination": "goa", "name": "Indoor pool and spa day", "area": "Candolim", "cost": 3500, "indoor": true, "hours": 4, "tags": ["pool", "relax"] },
+  { "id": "goa-p10", "destination": "goa", "name": "Museum of Goa", "area": "Pilerne", "cost": 500, "indoor": true, "hours": 2, "tags": ["museum", "art"] },
+  { "id": "goa-p11", "destination": "goa", "name": "Seafood dinner at Fishermans Wharf", "area": "Panjim", "cost": 2200, "indoor": true, "hours": 2, "tags": ["food"] },
+  { "id": "goa-p12", "destination": "goa", "name": "Bowling and arcade at Fun Zone", "area": "Panjim", "cost": 1200, "indoor": true, "hours": 2, "tags": ["fun"] },
+  { "id": "gok-p1", "destination": "gokarna", "name": "Om Beach kayaking", "area": "Om Beach", "cost": 1200, "indoor": false, "hours": 2, "tags": ["water sports", "beach"] },
+  { "id": "gok-p2", "destination": "gokarna", "name": "Beach trek from Kudle to Paradise", "area": "Kudle Beach", "cost": 500, "indoor": false, "hours": 5, "tags": ["nature", "beach"] },
+  { "id": "gok-p3", "destination": "gokarna", "name": "Snorkelling at Netrani Island", "area": "Netrani", "cost": 4000, "indoor": false, "hours": 6, "tags": ["water sports"] },
+  { "id": "gok-p4", "destination": "gokarna", "name": "Mahabaleshwar Temple", "area": "Gokarna town", "cost": 0, "indoor": true, "hours": 1, "tags": ["history"] },
+  { "id": "gok-p5", "destination": "gokarna", "name": "Coastal Karnataka thali", "area": "Gokarna town", "cost": 600, "indoor": true, "hours": 1, "tags": ["food"] },
+  { "id": "gok-p6", "destination": "gokarna", "name": "Ayurvedic spa session", "area": "Om Beach", "cost": 3000, "indoor": true, "hours": 2, "tags": ["relax"] }
+]

@@ -1,0 +1,20 @@
+[
+  { "id": "m1", "scenario": "monsoon", "source": "instagram", "destination": "goa", "place": "Baga", "hoursAgo": 3, "likes": 840, "text": "Baga beach road completely waterlogged, shacks closed, avoid this week" },
+  { "id": "m2", "scenario": "monsoon", "source": "x", "destination": "goa", "place": "Calangute", "hoursAgo": 6, "likes": 410, "text": "Water sports cancelled at Calangute, rough sea and red flag up" },
+  { "id": "m3", "scenario": "monsoon", "source": "google", "destination": "goa", "place": "Grande Island", "hoursAgo": 10, "likes": 95, "text": "Scuba trip to Grande Island cancelled, zero visibility, got a refund after 2 hours" },
+  { "id": "m4", "scenario": "monsoon", "source": "reddit", "destination": "goa", "place": "Dudhsagar", "hoursAgo": 14, "likes": 230, "text": "Dudhsagar jeep safari closed by forest department after heavy rain" },
+  { "id": "m5", "scenario": "monsoon", "source": "x", "destination": "goa", "place": "North Goa", "hoursAgo": 20, "likes": 1200, "text": "Flood alert in North Goa low lying areas, traffic jam everywhere" },
+  { "id": "m6", "scenario": "monsoon", "source": "instagram", "destination": "goa", "place": "Panjim", "hoursAgo": 8, "likes": 150, "text": "Rainy Panjim but the cooking class and seafood places are open and cozy" },
+  { "id": "m7", "scenario": "monsoon", "source": "google", "destination": "goa", "place": "Palolem", "hoursAgo": 30, "likes": 60, "text": "Palolem quieter than usual, sea still rough, no swimming allowed" },
+  { "id": "m8", "scenario": "monsoon", "source": "reddit", "destination": "goa", "place": "Candolim", "hoursAgo": 26, "likes": 75, "text": "Hotel prices in Candolim doubled this weekend because of a festival, ridiculous" },
+  { "id": "m9", "scenario": "monsoon", "source": "instagram", "destination": "gokarna", "place": "Om Beach", "hoursAgo": 5, "likes": 520, "text": "Om Beach sunny and calm today, kayaking open, barely any crowd" },
+  { "id": "m10", "scenario": "monsoon", "source": "google", "destination": "gokarna", "place": "Netrani", "hoursAgo": 12, "likes": 88, "text": "Netrani snorkelling was amazing, clear water and turtles" },
+  { "id": "m11", "scenario": "monsoon", "source": "x", "destination": "gokarna", "place": "Kudle Beach", "hoursAgo": 18, "likes": 140, "text": "Beach trek from Kudle was beautiful, light drizzle only" },
+  { "id": "n1", "scenario": "normal", "source": "instagram", "destination": "goa", "place": "Grande Island", "hoursAgo": 4, "likes": 980, "text": "Water crystal clear at Grande Island, scuba was unreal" },
+  { "id": "n2", "scenario": "normal", "source": "google", "destination": "goa", "place": "Palolem", "hoursAgo": 9, "likes": 210, "text": "Palolem sunset was beautiful, calm sea, great shacks" },
+  { "id": "n3", "scenario": "normal", "source": "x", "destination": "goa", "place": "Calangute", "hoursAgo": 12, "likes": 330, "text": "Parasailing at Calangute open, sunny and great fun" },
+  { "id": "n4", "scenario": "normal", "source": "reddit", "destination": "goa", "place": "Baga", "hoursAgo": 16, "likes": 400, "text": "Baga packed with crowds tonight, go south if you want quiet" },
+  { "id": "n5", "scenario": "normal", "source": "instagram", "destination": "goa", "place": "Dudhsagar", "hoursAgo": 22, "likes": 640, "text": "Dudhsagar falls in full flow, jeep safari open, amazing views" },
+  { "id": "n6", "scenario": "normal", "source": "google", "destination": "goa", "place": "Panjim", "hoursAgo": 28, "likes": 120, "text": "Cooking class in Panjim was the highlight of our trip" },
+  { "id": "n7", "scenario": "normal", "source": "x", "destination": "gokarna", "place": "Om Beach", "hoursAgo": 10, "likes": 260, "text": "Om Beach calm and clean, great for kayaking" }
+]
