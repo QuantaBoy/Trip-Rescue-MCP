@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TripRescue for Alexa+</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+  /* Shape rule: panels and bubbles 12px, every interactive control is a full pill. One accent: burnt orange. */
+  :root {
+    --bg: #eef0f2; --surface: #fafbfc; --sunk: #e4e7ea; --line: #d6dadf;
+    --text: #16191d; --muted: #5a6169; --accent: #b4461b; --on-accent: #fdfbfa; --accent-soft: #f6e3da;
+    --me: #23272d; --on-me: #f3f4f5;
+    --font: "Geist", ui-sans-serif, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316; --surface: #181b1f; --sunk: #202429; --line: #2c3137;
+      --text: #eceef0; --muted: #9aa2ab; --accent: #ee7a46; --on-accent: #1a0d06; --accent-soft: #3a2218;
+      --me: #e8eaec; --on-me: #16191d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .app { max-width: 1240px; margin: 0 auto; min-height: 100dvh; display: grid; grid-template-rows: 64px 1fr; padding: 0 24px; }
+  header { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
+  .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 17px; }
+  .brand { font-weight: 600; letter-spacing: -0.01em; }
+  .brand small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: -2px; }
+  .speak-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .speak-toggle[aria-pressed="false"] { color: var(--muted); }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; padding: 24px 0; min-height: 0; }
+
+  /* conversation */
+  .convo { display: grid; grid-template-rows: 1fr auto; min-height: 0; height: calc(100dvh - 64px - 48px); }
+  #log { overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 4px 6px 16px 0; scroll-behavior: smooth; }
+  .turn { max-width: 78%; display: grid; gap: 6px; }
+  .turn.me { align-self: flex-end; justify-items: end; }
+  .bubble { padding: 11px 15px; border-radius: 12px; white-space: pre-wrap; }
+  .me .bubble { background: var(--me); color: var(--on-me); }
+  .bot .bubble { background: var(--surface); border: 1px solid var(--line); }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tool { font: 12px/1 var(--mono); color: var(--muted); background: var(--sunk); border-radius: 999px; padding: 5px 9px; display: inline-flex; gap: 6px; align-items: center; }
+  .tool b { color: var(--text); font-weight: 500; }
+  .tool.err b { color: var(--accent); }
+  .skeleton { width: min(340px, 70vw); display: grid; gap: 8px; padding: 14px 15px; }
+  .skeleton i { height: 9px; border-radius: 999px; background: var(--sunk); }
+  .skeleton i:nth-child(2) { width: 82%; } .skeleton i:nth-child(3) { width: 56%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .skeleton i { background: linear-gradient(90deg, var(--sunk), var(--line), var(--sunk)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+    .turn { animation: rise .28s cubic-bezier(.16, 1, .3, 1); }
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+  .composer { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .hints { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .hints button { flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 13px; font-size: 13px; color: var(--muted); transition: color .15s, border-color .15s; }
+  .hints button:hover { color: var(--text); border-color: var(--muted); }
+  .composer[aria-busy="true"] .hints, .composer[aria-busy="true"] .send { opacity: .45; pointer-events: none; }
+  form { display: flex; align-items: center; gap: 10px; }
+  .mic { width: 52px; height: 52px; flex: none; border-radius: 999px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 22px; display: grid; place-items: center; transition: transform .12s; }
+  .mic:active, .send:active { transform: scale(.96); }
+  .mic.listening { background: var(--text); color: var(--bg); }
+  @media (prefers-reduced-motion: no-preference) { .mic.listening { animation: breathe 1.1s ease-in-out infinite; } }
+  @keyframes breathe { 50% { transform: scale(1.07); } }
+  .field { flex: 1; min-width: 0; display: flex; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 4px 4px 18px; }
+  .field input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 10px 0; outline: none; }
+  .field input::placeholder { color: var(--muted); }
+  .send { width: 40px; height: 40px; border-radius: 999px; border: 0; background: var(--sunk); font-size: 17px; display: grid; place-items: center; }
+  .status { font-size: 12px; color: var(--muted); min-height: 18px; }
+
+  /* trip panel */
+  aside { display: grid; align-content: start; gap: 18px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 16px; }
+  .panel h2 { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .dest { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+  .dest small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+  .verdict { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .verdict .word { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .verdict .word[data-v="SKIP"], .verdict .word[data-v="WAIT"] { color: var(--accent); }
+  .verdict p { margin: 0; color: var(--muted); font-size: 13px; }
+  .headline { font-size: 13px; background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; }
+  .headline span { display: block; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .facts div { display: grid; gap: 2px; }
+  .facts span { font-size: 12px; color: var(--muted); }
+  .facts strong { font: 500 15px var(--mono); }
+  .empty { color: var(--muted); font-size: 14px; margin: 0; }
+  .fine { font-size: 12px; color: var(--muted); margin: 0; padding: 0 4px; }
+
+  @media (max-width: 900px) {
+    .app { padding: 0 16px; }
+    .layout { grid-template-columns: 1fr; gap: 16px; padding: 16px 0; }
+    aside { order: -1; }
+    .panel { padding: 14px 16px; gap: 10px; }
+    .dest { font-size: 22px; }
+    .verdict .word { font-size: 28px; }
+    .convo { height: auto; min-height: 60dvh; }
+    .turn { max-width: 92%; }
+    .fine { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="mark" aria-hidden="true"><i class="ph-bold ph-lifebuoy"></i></div>
+    <div class="brand">TripRescue<small>Alexa+ simulation</small></div>
+    <button class="speak-toggle" id="voice" aria-pressed="true"><i class="ph ph-speaker-high" aria-hidden="true"></i><span>Voice on</span></button>
+  </header>
+
+  <div class="layout">
+    <section class="convo" aria-label="Conversation">
+      <div id="log" aria-live="polite"></div>
+      <div class="composer">
+        <div class="hints" id="hints">
+          <button>Plan 5 days in Goa</button>
+          <button>Build my itinerary</button>
+          <button>Is it worth going?</button>
+          <button>Try Gokarna instead</button>
+          <button>Will rain affect my plan?</button>
+          <button>Fix my plan</button>
+          <button>Yes, confirm</button>
+        </div>
+        <form id="form">
+          <button type="button" class="mic" id="mic" aria-label="Talk to Alexa"><i class="ph-fill ph-microphone" aria-hidden="true"></i></button>
+          <label class="field">
+            <span class="sr" hidden>Message</span>
+            <input id="text" autocomplete="off" placeholder="Ask about a trip" aria-label="Message">
+            <button class="send" aria-label="Send"><i class="ph-bold ph-arrow-up" aria-hidden="true"></i></button>
+          </label>
+        </form>
+        <div class="status" id="status"></div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel" id="panel">
+        <h2>This trip</h2>
+        <p class="empty">No trip yet. Say where you want to go, and the plan and verdict show up here.</p>
+      </div>
+      <p class="fine">Hotels, activities and traveller posts are simulated. News comes live from Google News, weather from Open-Meteo. Every answer is produced by the TripRescue MCP server.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const log = $("log"), input = $("text"), status = $("status"), mic = $("mic"), voiceBtn = $("voice");
+  const rupees = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  let sessionId;
+  try { sessionId = sessionStorage.getItem("sid"); } catch {}
+  if (!sessionId) { sessionId = crypto.randomUUID(); try { sessionStorage.setItem("sid", sessionId); } catch {} }
+
+  let voiceOn = true;
+  try { voiceOn = localStorage.getItem("voice") !== "off"; } catch {}
+  const paintVoice = () => {
+    voiceBtn.setAttribute("aria-pressed", voiceOn);
+    voiceBtn.innerHTML = `<i class="ph ${voiceOn ? "ph-speaker-high" : "ph-speaker-slash"}" aria-hidden="true"></i><span>${voiceOn ? "Voice on" : "Voice off"}</span>`;
+  };
+  paintVoice();
+  voiceBtn.onclick = () => { voiceOn = !voiceOn; try { localStorage.setItem("voice", voiceOn ? "on" : "off"); } catch {} if (!voiceOn) speechSynthesis.cancel(); paintVoice(); };
+
+  function turn(who, text, calls = []) {
+    const t = el("div", `turn ${who}`);
+    t.append(el("div", "bubble", text));
+    if (calls.length) {
+      const row = el("div", "tools");
+      for (const c of calls) {
+        const chip = el("span", "tool" + (c.error ? " err" : ""));
+        chip.title = JSON.stringify(c.input);
+        chip.innerHTML = `<i class="ph ph-plugs-connected" aria-hidden="true"></i>`;
+        chip.append(el("b", null, c.tool), document.createTextNode(`${(c.ms / 1000).toFixed(1)}s`));
+        row.append(chip);
+      }
+      t.append(row);
+    }
+    log.append(t);
+    log.scrollTop = log.scrollHeight;
+    return t;
+  }
+
+  function thinking() {
+    const t = el("div", "turn bot");
+    const s = el("div", "bubble skeleton");
+    s.append(el("i"), el("i"), el("i"));
+    t.append(s);
+    log.append(t);
+    log.scrollTop = log.scrollHeight;
+    return t;
+  }
+
+  function paintPanel(s) {
+    if (!s || !s.destination) return;
+    const p = $("panel");
+    p.replaceChildren(el("h2", null, s.booked ? "Booked trip" : "This trip"));
+    const dest = el("div", "dest", s.destination);
+    const when = new Date(s.startDate + "T00:00:00Z").toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+    dest.append(el("small", null, `${s.days} days from ${when}, ${s.travelers} travellers`));
+    p.append(dest);
+    if (s.verdict) {
+      const v = el("div", "verdict");
+      const w = el("div", "word", s.verdict === "GO" ? "Go" : s.verdict === "WAIT" ? "Wait" : "Skip");
+      w.dataset.v = s.verdict;
+      v.append(w, el("p", null, `${s.confidence} confident, ${s.basedOn}`));
+      p.append(v);
+      if (s.headline) {
+        const h = el("div", "headline", s.headline);
+        h.prepend(el("span", null, s.newsLive ? "Live news" : "Saved news"));
+        p.append(h);
+      }
+    }
+    const facts = el("div", "facts");
+    const fact = (label, value) => { const d = el("div"); d.append(el("span", null, label), el("strong", null, value)); facts.append(d); };
+    fact("Budget", rupees(s.budget));
+    fact("Plan total", s.total ? rupees(s.total) : "Not built");
+    if (s.hotel) fact("Stay", s.hotel);
+    if (s.alternative && s.verdict !== "GO") fact("Safer option", s.alternative);
+    p.append(facts);
+  }
+
+  function speak(text) {
+    if (!voiceOn || !("speechSynthesis" in window) || !text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
+    u.voice = voices.find((v) => v.lang === "en-IN") ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
+    u.onstart = () => (status.textContent = "Speaking");
+    u.onend = () => (status.textContent = "");
+    speechSynthesis.speak(u);
+  }
+
+  let busy = false;
+  async function send(text) {
+    text = text.trim();
+    if (!text || busy) return;
+    busy = true;
+    document.querySelector(".composer").setAttribute("aria-busy", "true");
+    turn("me", text);
+    input.value = "";
+    status.textContent = "Checking with TripRescue";
+    const wait = thinking();
+    try {
+      const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, text }) });
+      const data = await res.json();
+      wait.remove();
+      turn("bot", data.reply || data.error || "I didn't get an answer. Please try again.", data.calls || []);
+      paintPanel(data.state);
+      status.textContent = "";
+      speak(data.reply);
+    } catch {
+      wait.remove();
+      turn("bot", "I can't reach the TripRescue server. Check that npm start is running, then try again.");
+      status.textContent = "";
+    } finally {
+      busy = false;
+      document.querySelector(".composer").setAttribute("aria-busy", "false");
+    }
+  }
+
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
+  $("hints").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) send(b.textContent); });
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    mic.disabled = true;
+    mic.title = "Voice input needs Chrome or Edge";
+  } else {
+    const rec = new SR();
+    rec.lang = "en-IN";
+    rec.onstart = () => { mic.classList.add("listening"); status.textContent = "Listening"; };
+    rec.onend = () => { mic.classList.remove("listening"); if (status.textContent === "Listening") status.textContent = ""; };
+    rec.onerror = (e) => { status.textContent = e.error === "not-allowed" ? "Microphone blocked. Allow it in the address bar." : "Didn't catch that. Try again."; };
+    rec.onresult = (e) => send(e.results[0][0].transcript);
+    mic.addEventListener("click", () => { speechSynthesis.cancel(); try { rec.start(); } catch {} });
+  }
+
+  turn("bot", "Hi, I'm Alexa with TripRescue. Tell me where you want to go and I'll tell you if it's worth it right now.");
+</script>
+</body>
+</html>

@@ -29,6 +29,21 @@ async function converse(system, text, maxTokens = 400) {
 const readCache = new Map(); // a post's meaning doesn't change, so each post is read once
 const key = (p) => p.id ?? `${p.source}:${p.text}`;
 
+// Raw Converse call for the chat agent (messages and tool config passed straight through)
+export async function converseRaw({ system, messages, tools, maxTokens = 600, timeoutMs = 15000 }) {
+  client ??= new BedrockRuntimeClient({ region: process.env.AWS_REGION ?? "ap-southeast-2" });
+  return client.send(
+    new ConverseCommand({
+      modelId: MODEL,
+      system: [{ text: system }],
+      messages,
+      toolConfig: tools?.length ? { tools } : undefined,
+      inferenceConfig: { maxTokens, temperature: 0.3 },
+    }),
+    { abortSignal: AbortSignal.timeout(timeoutMs) },
+  );
+}
+
 // Reads posts the keyword pass ranked highest and returns { id: { sentiment, topic } }, or null on failure.
 export async function deepReadPosts(all) {
   if (!bedrockEnabled() || !all.length) return null;

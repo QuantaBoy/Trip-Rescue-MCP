@@ -1,9 +1,11 @@
 // TripRescue MCP server: Streamable HTTP (spec 2025-11-25) at /mcp, exposing planner.js as 12 tools.
 import express from "express";
+import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import * as P from "./planner.js";
+import { chat } from "./chat.js";
 
 const scenario = z.enum(["monsoon", "normal"]).optional().describe("Demo data set of social posts and fallback weather. Default monsoon.");
 
@@ -113,5 +115,18 @@ app.post("/mcp", async (req, res) => {
 app.all("/mcp", (_req, res) => res.status(405).set("Allow", "POST").json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed" }, id: null }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+// simulated Alexa+ page: Bedrock as the assistant, calling this server's /mcp tools
 const port = process.env.PORT || 3000;
+app.use(express.static(fileURLToPath(new URL("./public", import.meta.url))));
+app.post("/chat", async (req, res) => {
+  const { sessionId, text } = req.body ?? {};
+  if (typeof sessionId !== "string" || typeof text !== "string" || !text.trim()) return res.status(400).json({ error: "sessionId and text are required" });
+  try {
+    res.json(await chat({ sessionId: sessionId.slice(0, 64), text, port }));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ reply: "Sorry, something went wrong on my side. Please try again.", calls: [] });
+  }
+});
+
 app.listen(port, () => console.log(`TripRescue MCP server on http://localhost:${port}/mcp`));
