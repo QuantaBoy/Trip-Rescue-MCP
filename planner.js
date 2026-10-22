@@ -1,12 +1,14 @@
 // Trip planning logic. Plain code, no MCP: server.js wraps these functions as tools.
 import { readFileSync } from "node:fs";
 import { getNews, getForecast } from "./sources.js";
+import { deepReadPosts, speak } from "./bedrock.js";
 
 // Every tuning knob in one place
 export const CONFIG = {
   windowHours: 72, // only posts from the last 3 days count
   minPosts: 5, // fewer posts than this = low confidence
-  topN: 20, // highest-weighted posts kept as evidence (and for Bedrock in layer 5)
+  topN: 20, // highest-weighted posts kept as evidence
+  deepReadN: 12, // of those, how many Bedrock re-reads (more = slower)
   skipAt: 0.6, // risk at or above = SKIP
   waitAt: 0.4, // risk at or above = WAIT, below = GO
   itineraryBoost: 2, // posts about places in your plan count double
@@ -109,6 +111,8 @@ export function analyzePosts({ destId, scenario, itineraryAreas = [], extra = []
     totalScanned: posts.length + extra.length,
     relevantPosts: relevant.length,
     risk: Number((totW ? negW / totW : 0).toFixed(2)),
+    negW,
+    totW,
     placeRisk,
     top: scored.sort((a, b) => b.weight - a.weight).slice(0, CONFIG.topN),
     ms: Number((performance.now() - t0).toFixed(1)),
@@ -234,13 +238,27 @@ export function budgetBreakdown() {
   };
 }
 
-export async function tripVerdict({ scenario = "monsoon", liveNews = true } = {}) {
+export async function tripVerdict({ scenario = "monsoon", liveNews = true, deepRead = true } = {}) {
   const t0 = performance.now();
   const t = needTrip();
   const d = findDest(t.destination);
   const areas = (t.plan ?? []).flatMap((x) => x.items.map((i) => i.area));
   const news = await getNews(d, scenario, liveNews);
   const a = analyzePosts({ destId: d.id, scenario, itineraryAreas: areas, extra: news.items });
+
+  // stage 2: Bedrock re-reads the top-weighted posts; its sentiment replaces the keyword one for those posts
+  const reread = deepRead ? await deepReadPosts(a.top.slice(0, CONFIG.deepReadN)) : null;
+  if (reread) {
+    let { negW, totW } = a;
+    for (const p of a.top) {
+      const b = reread[p.id ?? `${p.source}:${p.text}`];
+      if (!b) continue;
+      negW += p.weight * (Math.max(0, -b.sentiment) - Math.max(0, -p.sentiment));
+      totW += p.weight * (Math.abs(b.sentiment) - Math.abs(p.sentiment));
+      Object.assign(p, b);
+    }
+    a.risk = Number((totW ? negW / totW : 0).toFixed(2));
+  }
   const verdict = decide(a.risk);
   const agreement = Math.abs(2 * a.risk - 1); // 1 = posts all agree, 0 = split
   const confidence = a.relevantPosts < CONFIG.minPosts ? 35 : Math.round(Math.min(95, 40 + 12 * Math.log10(a.relevantPosts) + 30 * agreement));
@@ -263,10 +281,15 @@ export async function tripVerdict({ scenario = "monsoon", liveNews = true } = {}
   const evidence = (verdict === "GO" ? a.top.filter((p) => p.sentiment > 0) : bad).slice(0, 3).map((p) => ({ source: p.source, place: p.place, hoursAgo: p.hoursAgo, text: p.text }));
   const issue = hotspots[0];
   const speech = {
-    GO: `Go for it, ${confidence}% confident. ${a.relevantPosts} recent posts about ${d.name} look good${evidence[0] ? `, like: ${evidence[0].text}` : ""}.`,
-    WAIT: `I'd wait, ${confidence}% confident. ${a.relevantPosts} recent posts show problems${issue ? `, mostly ${issue.mainIssue} around ${issue.place}` : ""}${bad[0] ? `: ${bad[0].text}` : ""}.${alternative ? ` ${alternative.destination} looks better right now.` : ""}`,
-    SKIP: `I'd skip ${d.name} for now, ${confidence}% confident. ${a.relevantPosts} recent posts report serious problems${issue ? `, mostly ${issue.mainIssue} around ${issue.place}` : ""}${bad[0] ? `: ${bad[0].text}` : ""}.${affected.length ? ` That hits ${affected.length} things in your plan.` : ""}${alternative ? ` ${alternative.destination} is a safer pick${alternative.about ? `: ${alternative.about}` : ""}` : ""}`,
+    GO: `My verdict is go, ${confidence}% confident. ${a.relevantPosts} recent posts about ${d.name} look good${evidence[0] ? `, like: ${evidence[0].text}` : ""}.`,
+    WAIT: `My verdict is wait, ${confidence}% confident. ${a.relevantPosts} recent posts show problems${issue ? `, mostly ${issue.mainIssue} around ${issue.place}` : ""}${bad[0] ? `: ${bad[0].text}` : ""}.${alternative ? ` ${alternative.destination} looks better right now.` : ""}`,
+    SKIP: `My verdict is skip, ${confidence}% confident. ${a.relevantPosts} recent posts report serious problems in ${d.name}${issue ? `, mostly ${issue.mainIssue} around ${issue.place}` : ""}${bad[0] ? `: ${bad[0].text}` : ""}.${affected.length ? ` That hits ${affected.length} things in your plan.` : ""}${alternative ? ` ${alternative.destination} looks safer${alternative.about ? `: ${alternative.about.replace(/\.$/, "")}` : ""}.` : ""}`,
   }[verdict];
+  // the user decides: never switch destination on our own, always ask
+  const question =
+    verdict === "GO"
+      ? " Shall I go ahead with this plan?"
+      : ` Do you still want to go to ${d.name}, or should I check another place${alternative ? ` like ${alternative.destination}` : ""}?`;
   // headlines naming the destination and saying something good or bad first, then newest
   const rel = (n) => (n.text.toLowerCase().includes(d.name.toLowerCase()) ? 2 : 0) + (n.topic !== "neutral" ? 1 : 0);
   const headlines = news.items
@@ -275,7 +298,11 @@ export async function tripVerdict({ scenario = "monsoon", liveNews = true } = {}
     .slice(0, 3)
     .map((n) => ({ title: n.text, outlet: n.outlet, hoursAgo: n.hoursAgo, topic: n.topic }));
   t.verdict = verdict;
+  const plain = speech + (headlines[0] ? ` Latest news${news.live ? "" : " (saved copy)"}: ${headlines[0].title}${headlines[0].outlet ? `, from ${headlines[0].outlet}` : ""}.` : " I couldn't find any recent news.") + question;
+  const spoken = deepRead ? await speak(plain) : { text: plain, by: "plain" };
   return {
+    analysis: reread ? `keywords on all posts, Bedrock deep read of top ${Object.keys(reread).length}` : "keywords",
+    wording: spoken.by,
     news: { source: news.source, live: news.live, count: news.items.length, headlines },
     verdict,
     confidence: `${confidence}%`,
@@ -286,8 +313,10 @@ export async function tripVerdict({ scenario = "monsoon", liveNews = true } = {}
     affectedPlan: affected,
     evidence,
     alternative,
+    tripUnchanged: true,
+    nextStep: verdict === "GO" ? "Wait for the user to confirm the plan." : `Ask the user. Keep ${d.name} if they insist. If they name another place, call start_trip_planning with it, then build_itinerary and trip_verdict again.`,
     ms: Number((performance.now() - t0).toFixed(1)),
-    speech: speech + (headlines[0] ? ` Latest news${news.live ? "" : " (saved copy)"}: ${headlines[0].title}${headlines[0].outlet ? `, from ${headlines[0].outlet}` : ""}.` : " I couldn't find any recent news."),
+    speech: spoken.text,
   };
 }
 

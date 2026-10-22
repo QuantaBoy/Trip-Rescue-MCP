@@ -58,7 +58,7 @@ function buildServer() {
   tool("budget_breakdown", "Split the current plan's cost into hotel, activities and food, and show what's left.", {}, P.budgetBreakdown, { readOnlyHint: true });
   tool(
     "trip_verdict",
-    "Should the user go now? Analyzes recent social media posts and live news about the destination and returns GO, WAIT or SKIP with confidence, evidence, affected plan items and a safer alternative.",
+    "Should the user go now? Analyzes recent social media posts and live news about the destination and returns GO, WAIT or SKIP with confidence, evidence, affected plan items and a safer alternative. It never changes the trip. Read the verdict to the user and let them decide: keep the trip if they want, or, if they name another place, call start_trip_planning with it and run build_itinerary and trip_verdict again.",
     { scenario, liveNews: z.boolean().optional().describe("Use live Google News, default true") },
     P.tripVerdict,
     { readOnlyHint: true, openWorldHint: true },

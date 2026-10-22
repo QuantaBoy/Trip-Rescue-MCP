@@ -18,13 +18,15 @@ assert.ok(wedding.items.reduce((s, i) => s + i.hours, 0) <= 5, "wedding day must
 step("budget", P.budgetBreakdown());
 
 // story checks use saved news so results stay the same; the live check is below
-const skip = await P.tripVerdict({ scenario: "monsoon", liveNews: false });
+const skip = await P.tripVerdict({ scenario: "monsoon", liveNews: false, deepRead: false });
 step("verdict monsoon", skip);
 console.log(`  ${skip.basedOn}, risk ${skip.risk}, ${skip.ms} ms`);
 assert.equal(skip.verdict, "SKIP");
 assert.equal(skip.alternative?.destination, "Gokarna");
+assert.match(skip.speech, /Do you still want to go to Goa/, "must ask the user, not decide");
+assert.equal(P.budgetBreakdown().total, it.total, "verdict must not change the trip");
 
-const go = await P.tripVerdict({ scenario: "normal", liveNews: false });
+const go = await P.tripVerdict({ scenario: "normal", liveNews: false, deepRead: false });
 step("verdict normal", go);
 console.log(`  ${go.basedOn}, risk ${go.risk}, ${go.ms} ms`);
 assert.equal(go.verdict, "GO");
@@ -49,6 +51,13 @@ step("confirm yes", yes);
 assert.ok(yes.applied);
 step("book", P.confirmBooking({ confirm: true }));
 
+// user picks the suggested place: the same process runs again for it
+step("user: try Gokarna", P.startTripPlanning({ destination: "Gokarna" }));
+step("itinerary Gokarna", P.buildItinerary());
+const gok = await P.tripVerdict({ scenario: "monsoon", liveNews: false, deepRead: false });
+step("verdict Gokarna", gok);
+assert.equal(gok.verdict, "GO");
+
 // latency: analyze every destination over the full dataset
 const t0 = performance.now();
 const all = ["goa", "gokarna", "manali", "jaipur", "kochi", "leh", "andaman", "delhi"].map((id) => P.analyzePosts({ destId: id, scenario: "monsoon" }));
@@ -60,6 +69,8 @@ assert.ok(ms < 1000, "analysis must stay under 1 s");
 const live = await P.tripVerdict({ scenario: "monsoon" });
 step("verdict live news", live);
 console.log(`  ${live.news.count} live headlines, verdict ${live.verdict}, risk ${live.risk}, ${live.ms} ms`);
+console.log(`  analysis: ${live.analysis}; wording: ${live.wording}`);
+if (process.env.AWS_BEARER_TOKEN_BEDROCK) assert.match(live.analysis, /Bedrock/, "Bedrock deep read must work when a key is set");
 assert.equal(live.news.source, "google-news", "live news must work");
 assert.ok(live.news.count > 0, "live news must return headlines");
 const cached = await P.tripVerdict({ scenario: "monsoon" });
