@@ -54,7 +54,8 @@ const summary = (mm) => (mm >= 20 ? "Heavy rain" : mm >= 5 ? "Showers" : mm >= 1
 
 // Open-Meteo only forecasts about 16 days ahead; later trips use the scenario forecast
 export async function getForecast(dest, dates, scenario, live = true) {
-  if (live) {
+  const inRange = Date.parse(dates.at(-1)) - Date.now() < 15 * 864e5;
+  if (live && inRange) {
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${dest.lat}&longitude=${dest.lon}&daily=precipitation_sum,temperature_2m_max&timezone=auto&start_date=${dates[0]}&end_date=${dates.at(-1)}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(4000) });

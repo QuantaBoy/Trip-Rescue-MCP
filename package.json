@@ -7,7 +7,8 @@
   "scripts": {
     "data": "node scripts/generate-data.js",
     "start": "node server.js",
-    "test": "node test.js"
+    "test": "node test.js",
+    "test:mcp": "node test-mcp.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
