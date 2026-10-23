@@ -1,5 +1,6 @@
 // Trip planning logic. Plain code, no MCP: server.js wraps these functions as tools.
 import { readFileSync } from "node:fs";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { getNews, getForecast } from "./sources.js";
 import { deepReadPosts, speak } from "./bedrock.js";
 
@@ -29,13 +30,20 @@ const posts = load("generated/posts.json"); // already includes the curated demo
 const calendar = load("calendar.json");
 const profile = load("profile.json"); // in-memory copy; update_preferences changes it
 
-let trip = null; // ponytail: one in-memory trip, single user; move to DynamoDB for multi-user
+// one trip per session; the caller sets the session with withSession()
+// ponytail: in memory per server instance, so a restart or a second Lambda instance loses it; DynamoDB if that matters
+const session = new AsyncLocalStorage();
+const trips = new Map();
+const sid = () => session.getStore() ?? "default";
+const cur = () => trips.get(sid()) ?? null;
+export const withSession = (id, fn) => session.run(String(id || "default").slice(0, 64), fn);
 
 export const rupees = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
 const addDays = (date, i) => new Date(Date.parse(date + "T00:00:00Z") + i * 864e5).toISOString().slice(0, 10);
 const nice = (date) => new Date(date + "T00:00:00Z").toLocaleDateString("en-IN", { day: "numeric", month: "long", timeZone: "UTC" });
 
 function needTrip(withPlan = false) {
+  const trip = cur();
   if (!trip) throw new Error("No trip yet. Say something like: plan a 5 day trip to Goa.");
   if (withPlan && !trip.plan) throw new Error("No itinerary yet. Say: build my itinerary.");
   return trip;
@@ -128,7 +136,8 @@ export function startTripPlanning({ destination, startDate = "2026-12-10", days 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new Error("Start date must look like 2026-12-10.");
   if (!(days >= 1 && days <= 14)) throw new Error("Trips can be 1 to 14 days.");
   const dates = Array.from({ length: days }, (_, i) => addDays(startDate, i));
-  trip = { destination: d.id, name: d.name, startDate, days, dates, budget: budget ?? profile.budget, travelers: travelers ?? profile.travelers, plan: null, hotel: null, pending: null, history: [], status: "planning" };
+  const trip = { destination: d.id, name: d.name, startDate, days, dates, budget: budget ?? profile.budget, travelers: travelers ?? profile.travelers, plan: null, hotel: null, pending: null, history: [], status: "planning" };
+  trips.set(sid(), trip);
   const cal = checkCalendar();
   return {
     trip: { destination: d.name, startDate, days, budget: trip.budget, travelers: trip.travelers },
@@ -148,7 +157,7 @@ export function updatePreferences({ like, dislike, budget }) {
   if (budget != null) {
     if (!(budget > 0)) throw new Error("Budget must be a positive number of rupees.");
     profile.budget = budget;
-    if (trip) trip.budget = budget;
+    if (cur()) cur().budget = budget;
   }
   return { profile, speech: `Got it. I'll remember that${like ? ` you like ${like}` : ""}${like && dislike ? " and" : ""}${dislike ? ` you don't like ${dislike}` : ""}${budget ? `${like || dislike ? ", and" : ""} your budget is ${rupees(budget)}` : ""}.` };
 }
@@ -169,6 +178,7 @@ const disliked = (tags) => tags.some((t) => profile.dislikes.includes(t));
 
 export function searchHotels({ destination, maxPrice } = {}) {
   const d = destination ? findDest(destination) : findDest(needTrip().destination);
+  const trip = cur();
   const nights = trip?.destination === d.id ? trip.days : 5;
   const cap = maxPrice ?? ((trip?.budget ?? profile.budget) * CONFIG.hotelShare) / nights;
   const list = hotels

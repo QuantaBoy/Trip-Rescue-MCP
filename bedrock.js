@@ -30,11 +30,14 @@ const readCache = new Map(); // a post's meaning doesn't change, so each post is
 const key = (p) => p.id ?? `${p.source}:${p.text}`;
 
 // Raw Converse call for the chat agent (messages and tool config passed straight through)
-export async function converseRaw({ system, messages, tools, maxTokens = 600, timeoutMs = 15000 }) {
+// the conversation needs more reasoning than wording or post reading, so it gets the larger model
+const CHAT_MODEL = process.env.CHAT_MODEL ?? "amazon.nova-pro-v1:0";
+
+export async function converseRaw({ system, messages, tools, maxTokens = 600, timeoutMs = 20000 }) {
   client ??= new BedrockRuntimeClient({ region: process.env.AWS_REGION ?? "ap-southeast-2" });
   return client.send(
     new ConverseCommand({
-      modelId: MODEL,
+      modelId: CHAT_MODEL,
       system: [{ text: system }],
       messages,
       toolConfig: tools?.length ? { tools } : undefined,
