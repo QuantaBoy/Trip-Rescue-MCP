@@ -69,7 +69,17 @@
   .me-card .likes span { font-size: 11.5px; background: var(--panel); border-radius: 999px; padding: 2px 8px; color: var(--muted); }
 
   /* centre */
-  .main { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; padding: 22px 28px 20px; }
+  .main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; padding: 20px 28px; }
+  .chat-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .chat-head-left { display: flex; align-items: center; gap: 10px; }
+  .chat-head-left h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .chat-live-badge { display: inline-flex; align-items: center; gap: 6px; font: 11.5px/1 var(--mono); color: var(--muted); background: var(--sunk); border-radius: 999px; padding: 4px 9px; }
+  .chat-live-badge .dot { width: 6px; height: 6px; border-radius: 999px; background: #22c55e; box-shadow: 0 0 0 2px rgb(34 197 94 / .25); }
+  .new-chat-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all .18s cubic-bezier(.16, 1, .3, 1); box-shadow: var(--card-shadow); }
+  .new-chat-pill:hover { background: var(--sunk); color: var(--text); border-color: var(--faint); transform: translateY(-1px); }
+  .new-chat-pill:active { transform: translateY(0) scale(.97); }
+  .new-chat-pill i { font-size: 15px; color: var(--accent); transition: transform .4s cubic-bezier(.16, 1, .3, 1); }
+  .new-chat-pill:hover i { transform: rotate(180deg); }
   .stage { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
   .welcome { margin: auto; text-align: center; display: grid; justify-items: center; gap: 10px; padding: 24px 0; max-width: 620px; }
   .glyph { width: 84px; height: 84px; border-radius: 28px; display: grid; place-items: center; font-size: 42px; color: var(--accent);
@@ -205,7 +215,7 @@
       <div>TripRescue<small>Alexa+ simulation</small></div>
     </a>
     <nav class="nav" aria-label="Main">
-      <button class="on" id="newTrip"><i class="ph ph-plus-circle" aria-hidden="true"></i><span>New trip</span></button>
+      <button class="on" id="newTrip" title="Start a new chat (refresh conversation)"><i class="ph ph-chat-circle-dots" aria-hidden="true"></i><span>New chat</span></button>
       <a class="navlink" href="/#how"><i class="ph ph-info" aria-hidden="true"></i><span>How it works</span></a>
       <a class="navlink" href="/"><i class="ph ph-house" aria-hidden="true"></i><span>Home</span></a>
       <a class="sr" href="/mcp">MCP endpoint</a>
@@ -222,6 +232,17 @@
   </aside>
 
   <main class="main">
+    <div class="chat-head">
+      <div class="chat-head-left">
+        <h2>Alexa+ Chat</h2>
+        <span class="chat-live-badge"><span class="dot" aria-hidden="true"></span>Live Assistant</span>
+      </div>
+      <button type="button" class="new-chat-pill" id="newChatBtn" title="Start a new chat (refresh conversation)">
+        <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>
+        <span>New chat</span>
+      </button>
+    </div>
+
     <div class="stage" id="stage">
       <section class="welcome" id="welcome">
         <div class="glyph" aria-hidden="true"><i class="ph-fill ph-compass"></i></div>
@@ -455,12 +476,18 @@
   composer.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
   $("chips").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) send(b.textContent); });
   document.querySelectorAll(".starter").forEach((b) => b.addEventListener("click", () => send(b.dataset.say)));
-  $("newTrip").addEventListener("click", () => {
+  function resetChat() {
     sessionId = newSession();
     log.replaceChildren(); log.hidden = true; $("welcome").hidden = false;
     $("panel").innerHTML = '<div class="card empty"><i class="ph-duotone ph-suitcase-rolling" aria-hidden="true"></i>Say where you want to go. The plan, verdict and live news show up here.</div>';
-    speechSynthesis.cancel(); input.focus();
-  });
+    speechSynthesis.cancel();
+    input.value = "";
+    status.textContent = "Chat refreshed. Ready for a new trip.";
+    setTimeout(() => { if (status.textContent.startsWith("Chat refreshed")) status.textContent = ""; }, 2400);
+    input.focus();
+  }
+  $("newTrip")?.addEventListener("click", resetChat);
+  $("newChatBtn")?.addEventListener("click", resetChat);
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { mic.disabled = true; mic.title = "Voice input needs Chrome or Edge"; }
