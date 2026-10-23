@@ -4,7 +4,7 @@ import * as P from "./planner.js";
 
 const step = (name, r) => console.log(`\n[${name}] ${r.speech}`);
 
-step("start", P.startTripPlanning({ destination: "Goa" }));
+step("start", await P.startTripPlanning({ destination: "Goa", liveNews: false }));
 
 const it = P.buildItinerary();
 step("itinerary", it);
@@ -52,7 +52,7 @@ assert.ok(yes.applied);
 step("book", P.confirmBooking({ confirm: true }));
 
 // user picks the suggested place: the same process runs again for it
-step("user: try Gokarna", P.startTripPlanning({ destination: "Gokarna" }));
+step("user: try Gokarna", await P.startTripPlanning({ destination: "Gokarna", liveNews: false }));
 step("itinerary Gokarna", P.buildItinerary());
 const gok = await P.tripVerdict({ scenario: "monsoon", liveNews: false, deepRead: false });
 step("verdict Gokarna", gok);

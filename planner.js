@@ -131,7 +131,7 @@ const decide = (risk) => (risk >= CONFIG.skipAt ? "SKIP" : risk >= CONFIG.waitAt
 
 // ---------- tools ----------
 
-export function startTripPlanning({ destination, startDate = "2026-12-10", days = 5, budget, travelers }) {
+export async function startTripPlanning({ destination, startDate = "2026-12-10", days = 5, budget, travelers, scenario = "monsoon", liveNews = true }) {
   const d = findDest(destination);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new Error("Start date must look like 2026-12-10.");
   if (!(days >= 1 && days <= 14)) throw new Error("Trips can be 1 to 14 days.");
@@ -139,10 +139,19 @@ export function startTripPlanning({ destination, startDate = "2026-12-10", days 
   const trip = { destination: d.id, name: d.name, startDate, days, dates, budget: budget ?? profile.budget, travelers: travelers ?? profile.travelers, plan: null, hotel: null, pending: null, history: [], status: "planning" };
   trips.set(sid(), trip);
   const cal = checkCalendar();
+  // safety first: a quick verdict the moment a place is named, so the user knows before planning further
+  const v = await tripVerdict({ scenario, liveNews, deepRead: false });
+  const safeLine = {
+    GO: `Good news: ${d.name} looks safe right now, ${v.confidence} confident.`,
+    WAIT: `Heads up: ${d.name} has some problems right now${v.hotspots[0] ? `, mostly ${v.hotspots[0].mainIssue} around ${v.hotspots[0].place}` : ""}. I would wait, ${v.confidence} confident.`,
+    SKIP: `Careful: ${d.name} does not look safe right now${v.hotspots[0] ? `, mostly ${v.hotspots[0].mainIssue} around ${v.hotspots[0].place}` : ""}. I would skip it, ${v.confidence} confident.`,
+  }[v.verdict];
+  const next = v.verdict === "GO" ? "Want me to build the itinerary?" : `Do you still want to plan ${d.name}, or should I check ${v.alternative ? v.alternative.destination : "another place"} instead?`;
   return {
     trip: { destination: d.name, startDate, days, budget: trip.budget, travelers: trip.travelers },
     calendarConflicts: cal.conflicts,
-    speech: `Starting a ${days} day ${d.name} trip from ${nice(startDate)} for ${trip.travelers}, budget ${rupees(trip.budget)}.${cal.conflicts.length ? " " + cal.speech : ""} Want me to build the itinerary?`,
+    safety: { verdict: v.verdict, confidence: v.confidence, basedOn: v.basedOn, hotspots: v.hotspots.slice(0, 3), alternative: v.alternative, headline: v.news.headlines[0]?.title ?? null, newsLive: v.news.live },
+    speech: `${safeLine} Starting a ${days} day ${d.name} trip from ${nice(startDate)} for ${trip.travelers}, budget ${rupees(trip.budget)}.${cal.conflicts.length ? " " + cal.speech : ""} ${next}`,
   };
 }
 

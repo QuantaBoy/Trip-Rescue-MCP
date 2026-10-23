@@ -16,7 +16,8 @@ How to think:
 - When a tool returns an error, understand it and guide the user to the next step in your own words.
 - Do only what the user just asked, usually one tool call. Planning a trip means start_trip_planning only; build the itinerary, verdict or budget only when asked.
 - Replies are spoken aloud: 2 to 4 natural sentences, like a friend who knows travel. No markdown, no lists, no emoji, no <thinking> tags. Always end your turn with the spoken reply, usually with a helpful next question.
-- After start_trip_planning, ask before building the itinerary unless the user already asked for a plan.
+- start_trip_planning returns a quick safety verdict. Always lead your reply with it: say plainly whether the place is safe right now and why. If it is not safe, ask whether to continue or check the safer place, and do not build the itinerary until they answer.
+- After start_trip_planning, ask before building the itinerary unless the user already asked for a plan and the place is safe.
 - Never switch destination on your own. After trip_verdict, read the verdict and let the user decide.
 - Only call confirm_booking with confirm=true after the user clearly says yes in their latest message.
 - If a tool returns an error, say what the user should do next.`;
@@ -25,14 +26,27 @@ const MAX_STEPS = 6; // tool calls per user message
 const YES = /\b(yes|yeah|yep|yup|confirm|confirmed|book it|go ahead|do it|sure|okay|ok)\b/i;
 // which simulated feed the demo uses; the model never picks it
 const SCENARIO = process.env.DEMO_SCENARIO === "normal" ? "normal" : "monsoon";
-const SCENARIO_TOOLS = new Set(["trip_verdict", "check_disruption"]);
+const SCENARIO_TOOLS = new Set(["trip_verdict", "check_disruption", "start_trip_planning"]);
 const sessions = new Map(); // ponytail: in-memory chat history, cleared on restart
 const states = new Map(); // per session: what the side panel shows
 
 // pull the few fields the page displays out of a tool result
 function digest(tool, out, state) {
-  if (tool === "start_trip_planning") return Object.assign(state, out.trip, { verdict: null, confidence: null, basedOn: null, headline: null, alternative: null, total: null, hotel: null, booked: false });
-  if (tool === "build_itinerary") return Object.assign(state, { hotel: out.hotel?.name, total: out.total });
+  if (tool === "start_trip_planning") {
+    const v = out.safety ?? {};
+    return Object.assign(state, out.trip, { verdict: v.verdict ?? null, confidence: v.confidence ?? null, basedOn: v.basedOn ?? null, headline: v.headline ?? null, newsLive: v.newsLive ?? null, alternative: v.alternative?.destination ?? null, total: null, hotel: null, plan: null, pending: null, booked: false });
+  }
+  if (tool === "build_itinerary")
+    return Object.assign(state, { hotel: out.hotel?.name, total: out.total, plan: out.plan?.map((d) => ({ day: d.day, date: d.date, note: d.note, items: d.items.map((i) => ({ name: i.name, indoor: i.indoor })) })), pending: null });
+  if (tool === "replan_trip" && out.changes?.length) return Object.assign(state, { pending: out.changes.map((c) => ({ day: c.day, from: c.from.name, to: c.to.name })) });
+  if (tool === "confirm_booking" && out.applied && state.pending && state.plan) {
+    for (const c of state.pending) {
+      const day = state.plan.find((d) => d.day === c.day);
+      const item = day?.items.find((i) => i.name === c.from);
+      if (item) Object.assign(item, { name: c.to, indoor: true, changed: true });
+    }
+    state.pending = null;
+  }
   if (tool === "budget_breakdown") return Object.assign(state, { total: out.total });
   if (tool === "trip_verdict")
     return Object.assign(state, { verdict: out.verdict, confidence: out.confidence, basedOn: out.basedOn, headline: out.news?.headlines?.[0]?.title ?? null, newsLive: out.news?.live, alternative: out.alternative?.destination ?? null });

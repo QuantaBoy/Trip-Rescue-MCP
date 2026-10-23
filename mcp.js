@@ -21,13 +21,15 @@ export function buildServer() {
 
   tool(
     "start_trip_planning",
-    "Start a new trip when the user says where they want to go. Also checks the calendar for those dates.",
+    "Start a new trip when the user says where they want to go. Checks the calendar and gives a quick safety verdict (go, wait or skip) for the place right away. Tell the user whether it is safe before anything else.",
     {
       destination: z.string().max(60).describe("City or region, e.g. Goa"),
       startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("YYYY-MM-DD, default 2026-12-10"),
       days: z.number().int().min(1).max(14).optional().describe("Default 5"),
       budget: z.number().positive().max(10_000_000).optional().describe("Total budget in INR, default from profile"),
       travelers: z.number().int().min(1).max(20).optional(),
+      scenario,
+      liveNews: z.boolean().optional().describe("Use live Google News for the safety check, default true"),
     },
     P.startTripPlanning,
   );

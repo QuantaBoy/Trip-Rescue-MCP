@@ -39,7 +39,7 @@ app.all("/mcp", (_req, res) => res.status(405).set("Allow", "POST").json({ jsonr
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 // simulated Alexa+ page: Bedrock as the assistant, calling the MCP tools
-app.use(express.static(fileURLToPath(new URL("./public", import.meta.url))));
+app.use(express.static(fileURLToPath(new URL("./public", import.meta.url)), { extensions: ["html"] }));
 
 // every chat message costs Bedrock calls on a public URL, so cap it per visitor
 const CHAT_PER_MINUTE = 12;
